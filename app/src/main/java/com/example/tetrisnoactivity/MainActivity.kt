@@ -23,6 +23,10 @@ class MainActivity : AppCompatActivity() {
         tvHighScore = findViewById<TextView>(R.id.tv_high_score)
 
         btnNewGame.setOnClickListener(this::onBtnNewGameClick)
+
+        btnExit.setOnClickListener(this::onBtnExitClick)
+
+        btnResetScore.setOnClickListener(this::onBtnResetScoreClick)
     }
 
     private fun onBtnNewGameClick(view: View) {
