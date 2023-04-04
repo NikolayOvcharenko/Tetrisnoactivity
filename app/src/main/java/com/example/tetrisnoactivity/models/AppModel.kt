@@ -65,14 +65,59 @@ class AppModel {
                 for (j in 0 until shape[i].size) {
                     val y = position.y + i
                     val x = position.x + j
-                    if (CellConstants.EMPTY.value != shape[i][j] && CellConstants.EMPTY.value != field[y][x]) return false
+                    if (CellConstants.EMPTY.value != shape[i][j] &&
+                        CellConstants.EMPTY.value != field[y][x]
+                    ) {
+                        return false
+                    }
                 }
             }
+            true
+        }
+    }
 
+    private fun moveValid(position: Point, frameNumber: Int?): Boolean {
+        val shape: Array<ByteArray>? = currentBlock?.getShape(frameNumber as Int)
+        return validTranslation(position, shape as Array<ByteArray>)
+    }
+
+    fun generateField(action: String) {
+        if (isGameActive()) {
+            resetField()
+            var frameNumber: Int? = currentBlock?.frameNumber
+            val coordinate: Point? = Point()
+            coordinate?.x = currentBlock?.position?.x
+            coordinate?.y = currentBlock?.position?.y
+
+            when (action) {
+                Motions.LEFT.name -> {
+                    coordinate?.x = currentBlock?.position?.x?.minus(1)
+                }
+                Motions.RIGHT.name -> {
+                    coordinate?.x = currentBlock?.position?.x?.plus(1)
+                }
+                Motions.DOWN.name -> {
+                    coordinate?.x = currentBlock?.position?.y?.plus(1)
+                }
+                Motions.ROTATE.name -> {
+                    frameNumber = frameNumber?.plus(1)
+                    if (frameNumber != null) {
+                        if (frameNumber >= currentBlock?.frameCount as Int) {
+                            frameNumber = 0
+                        }
+                    }
+                }
+
+            }
+            if (!moveValid((coordinate as Point, frameNumber)) {
+                translateBlock(
+                    currentBlock?.position as Point,
+                    currentBlock?.frameNumber as Int
+                )
+
+            })
 
         }
-
-
     }
 
     enum class Statusus {
