@@ -1,6 +1,8 @@
 package com.example.tetrisnoactivity.view
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.os.Message
 import android.os.Handler
@@ -9,7 +11,10 @@ import android.view.View
 import android.widget.Toast
 //import androidx.annotation.Dimension
 import com.example.tetrisnoactivity.GameActivity
+import com.example.tetrisnoactivity.constants.CellConstants
+import com.example.tetrisnoactivity.constants.FieldConstants
 import com.example.tetrisnoactivity.models.AppModel
+import com.example.tetrisnoactivity.models.Block
 
 
 class TetrisView : View {
@@ -38,7 +43,7 @@ class TetrisView : View {
             if (message.what == 0) {
                 if (owner.model!!.isGameOver()) {
                     owner.model?.endGame()
-                    Toast.makeText(owner.activity, "Game Ower", Toast.LENGTH_LONG).show();
+                    Toast.makeText(owner.activity, "Game Over", Toast.LENGTH_LONG).show();
                 }
                 if (owner.model!!.isGameActive()) {
                     owner.setGameCommandWithDelay(AppModel.Motions.DOWN)
@@ -49,7 +54,7 @@ class TetrisView : View {
     }
 
     fun sleep(delay: Long) {
-        this.removeMessage(0)
+        this.removeMessages(0)
         sendMessageDelayed(obtianMessage(0), delay)
     }
 
@@ -84,7 +89,41 @@ class TetrisView : View {
         viewHandler.sleep(DELAY.toLong())
     }
     private fun updateScores() {
-    activity?.tvCurrentScore?.text = "${model.score}"
+    activity?.tvCurrentScore?.text = "${model?.score}"
         activity?.tvHighScore?.text = "${activity?.appPreferences?.getHighScore()}"
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        drawFrame(canvas)
+        if (model != null) {
+            for (i in 0 until FieldConstants.ROW_COUNT.value) {
+                for (j in 0 until FieldConstants.COLUMN_COUNT.value) {
+                    drawCell(canvas, i, j)
+                }
+            }
+        }
+    }
+    private fun drawFrame(canvas: Canvas) {
+        paint.color = Color.LTGRAY
+        canvas.drawRect(frameOffset.width.toFloat(),
+            frameOffset.height.toFloat(),
+            width - frameOffset.width.toFloat(),
+            height - frameOffset.height.toFloat(), paint)
+    }
+    private fun drawCell (canvas: Canvas, row: Int, col: Int) {
+        val cellStatus = model?.getCellStatus(row, col)
+        if (CellConstants.EMPTY.value != cellStatus) {
+            val color = if (CellConstants.EPHEMERAL.value == cellStatus) {
+                model?.currentBlock?.color
+            } else {
+            Block.getColor(cellStatus as Byte)
+            }
+            drawCell(canvas, col, row, color as Int)
+        }
+    }
+
+    private fun drawCell (canvas: Canvas, x: Int, y: Int, rgbColor: Int) {
+        paint.color = rgbColor
     }
 }
