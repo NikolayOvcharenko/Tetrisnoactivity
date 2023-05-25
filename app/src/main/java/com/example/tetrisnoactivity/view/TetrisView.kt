@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Message
 import android.os.Handler
 import android.util.AttributeSet
@@ -19,12 +20,12 @@ import com.example.tetrisnoactivity.models.Block
 
 class TetrisView : View {
     private val paint = Paint()
-    private val lastMove: Long = 0
-    private val model: AppModel? = null
-    private val activity: GameActivity? = null
+    private var lastMove: Long = 0
+    private var model: AppModel? = null
+    private var activity: GameActivity? = null
     private val viewHandler = ViewHandler(this)
-    private val cellSize: Dimension = Dimension(0, 0)
-    private val frameOffset: Dimension = Dimension(0, 0)
+    private var cellSize: Dimension = Dimension(0, 0)
+    private var frameOffset: Dimension = Dimension(0, 0)
 
     constructor(context: Context, attrs: AttributeSet) :
             super(context, attrs)
@@ -51,11 +52,13 @@ class TetrisView : View {
             }
 
         }
+
+        fun sleep(delay: Long) {
+            this.removeMessages(0)
+            sendMessageDelayed(obtainMessage(0), delay)
     }
 
-    fun sleep(delay: Long) {
-        this.removeMessages(0)
-        sendMessageDelayed(obtianMessage(0), delay)
+
     }
 
     private data class Dimension(val width: Int, val height: Int)
@@ -78,6 +81,7 @@ class TetrisView : View {
             setGameCommandWithDelay(move)
         }
     }
+
     fun setGameCommandWithDelay(move: AppModel.Motions) {
         val now = System.currentTimeMillis()
         if (now - lastMove > DELAY) {
@@ -88,8 +92,9 @@ class TetrisView : View {
         updateScores()
         viewHandler.sleep(DELAY.toLong())
     }
+
     private fun updateScores() {
-    activity?.tvCurrentScore?.text = "${model?.score}"
+        activity?.tvCurrentScore?.text = "${model?.score}"
         activity?.tvHighScore?.text = "${activity?.appPreferences?.getHighScore()}"
     }
 
@@ -104,26 +109,49 @@ class TetrisView : View {
             }
         }
     }
+
     private fun drawFrame(canvas: Canvas) {
         paint.color = Color.LTGRAY
-        canvas.drawRect(frameOffset.width.toFloat(),
+        canvas.drawRect(
+            frameOffset.width.toFloat(),
             frameOffset.height.toFloat(),
             width - frameOffset.width.toFloat(),
-            height - frameOffset.height.toFloat(), paint)
+            height - frameOffset.height.toFloat(), paint
+        )
     }
-    private fun drawCell (canvas: Canvas, row: Int, col: Int) {
+
+    private fun drawCell(canvas: Canvas, row: Int, col: Int) {
         val cellStatus = model?.getCellStatus(row, col)
         if (CellConstants.EMPTY.value != cellStatus) {
             val color = if (CellConstants.EPHEMERAL.value == cellStatus) {
                 model?.currentBlock?.color
             } else {
-            Block.getColor(cellStatus as Byte)
+                Block.getColor(cellStatus as Byte)
             }
             drawCell(canvas, col, row, color as Int)
         }
     }
 
-    private fun drawCell (canvas: Canvas, x: Int, y: Int, rgbColor: Int) {
+    private fun drawCell(canvas: Canvas, x: Int, y: Int, rgbColor: Int) {
         paint.color = rgbColor
+        val top: Float = (frameOffset.height + y * cellSize.height + BLOCK_OFFSET).toFloat()
+        val left: Float = (frameOffset.width + x * cellSize.width + BLOCK_OFFSET).toFloat()
+        val bottom: Float =
+            (frameOffset.height + (y + 1) * cellSize.height - BLOCK_OFFSET).toFloat()
+        val right: Float = (frameOffset.width + (x + 1) * cellSize.width - BLOCK_OFFSET).toFloat()
+        val rectangle = RectF(left, top, right, bottom)
+        canvas.drawRoundRect(rectangle, 4F, 4F, paint)
+    }
+
+    override fun onSizeChanged(width: Int, height: Int, previousWidth: Int, previousHight: Int) {
+        super.onSizeChanged(width, height, previousWidth, previousHight)
+        val cellWidth = (width - 2 * FRAME_OFFSET_BASE) / FieldConstants.COLUMN_COUNT.value
+        val cellHeight = (height - 2 * FRAME_OFFSET_BASE) / FieldConstants.ROW_COUNT.value
+        val n = Math.min(cellWidth, cellHeight)
+        this.cellSize = Dimension(n, n)
+        val offsetX = (width - FieldConstants.COLUMN_COUNT.value * n) / 2
+        val offsetY = (height - FieldConstants.ROW_COUNT.value * n) / 2
+        this.frameOffset = Dimension(offsetX, offsetY)
+
     }
 }
